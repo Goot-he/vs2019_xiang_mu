@@ -1,0 +1,400 @@
+#include <iostream>
+#include <fstream>
+#include <cstring>
+using namespace std;
+
+class List_Stack
+{
+private:
+	int id;
+
+
+public:
+	List_Stack* head;
+	List_Stack* next;
+	List_Stack()
+	{
+	}
+
+	~List_Stack()
+	{
+		List_Stack* current = head; // 当前节点指针
+		while (current != nullptr)
+		{
+			List_Stack* next = current->next; // 保存下一个节点
+			delete current; // 释放当前节点
+			current = next; // 移动到下一个节点
+		}
+		head = nullptr; // 将头指针置为nullptr，避免悬挂指针
+	}
+
+
+	int get_id()
+	{
+		return this->id;
+	}
+	void set_id(int id)
+	{
+		this->id = id;
+	}
+
+	//(判断编号是否存在 并进行循环输入)
+	int chachong()
+	{
+		List_Stack* temp = head;
+		int id;
+		while (1) // 外层循环，用于不断提示用户输入
+		{
+			cout << "请输入编号: ";
+			cin >> id;
+
+			temp = head; // 每次重新从链表头开始检查
+			bool exists = false; // 标志变量，用于标记编号是否存在
+
+			while (temp != nullptr) // 遍历链表
+			{
+				if (temp->id == id) // 如果找到相同的编号
+				{
+					cout << "这个编号已经存在，请重新输入！" << endl;
+					exists = true; // 设置标志为 true
+					break; // 跳出内层循环
+				}
+				temp = temp->next; // 移动到下一个节点
+			}
+
+			if (!exists) // 如果编号不存在
+			{
+				return id; // 返回用户输入的编号
+			}
+		}
+	}
+public:
+	//(增): 在头节点进行数据增加的操作
+	void Add()
+	{
+		int id = chachong();
+		List_Stack* temp = new List_Stack;
+		temp->id = id;
+		if (head == nullptr)
+		{
+			head = temp;
+			temp->next = nullptr;
+			cout << "添加成功" << endl;
+		}
+		else {
+			temp->next = head;
+			head = temp;
+			cout << "添加成功" << endl;
+		}
+	}
+
+	//(删)
+	void Delete()
+	{
+		if (head == nullptr) // 检查链表是否为空
+		{
+			cout << "链表为空，无法删除" << endl;
+		}
+		else
+		{
+			List_Stack* temp = head; // 保存头节点
+			head = head->next;       // 将头指针指向下一个节点
+			delete temp;             // 释放原头节点
+			cout << "删除成功" << endl;
+		}
+		system("pause");
+		system("cls");
+		return;
+	}
+
+
+	//(改)
+	void Change()
+	{
+		int id;
+		cout << "请输入你要修改的编号" << endl;
+		cin >> id;
+		List_Stack* temp = head;
+		while (temp != nullptr)
+		{
+			if (temp->id == id)
+			{
+				cout << "请输入新的编号" << endl;
+				int new_id = chachong();
+				temp->id = new_id;
+				cout << "修改成功" << endl;
+				system("pause");
+				system("cls");
+				return;
+			}
+			temp = temp->next;
+		}
+		if (temp == nullptr)
+		{
+			cout << "你输入的编号不存在" << endl;
+			return;
+		}
+	}
+
+	//(查)
+	void Find()
+	{
+		if (head == nullptr)
+		{
+			cout << "当前栈为空" << endl;
+		}
+		else {
+			cout << "下面是栈顶编号" << endl;
+			cout << head->id << endl;
+		}
+	}
+
+	//(打印全部编号)
+	//void Print()
+	//{
+	//	List_Stack* temp = head;
+	//	if (temp == nullptr)
+	//	{
+	//		cout << "当前栈为空" << endl;
+	//		return;
+	//	}
+	//	cout << "编号" << endl;
+	//	while (temp != nullptr)
+	//	{
+	//		cout << temp->id << endl;
+	//		temp = temp->next;
+	//	}
+	//}
+
+	void  digui(List_Stack *p)
+	{
+		if (p == nullptr)
+		{
+			return;
+		}
+		else {
+			cout << "编号：" << p->id << endl;
+			digui(p->next);
+		}
+	}
+
+
+	//(获取当前栈的数据个数)
+	int Get_len()
+	{
+		List_Stack* temp = head;
+		int count = 0;
+		while (temp != nullptr)
+		{
+			count++;
+			temp = temp->next;
+		}
+		return count;
+	}
+
+
+	//(获取栈顶信息)
+	void print_head()
+	{
+		if (head == nullptr)
+		{
+			cout << "当前栈为空" << endl;
+		}
+		else {
+			cout << "当前栈顶的数据是:";
+			cout << head->id << endl;
+		}
+	}
+
+
+	//(从文件里面读取信息创建链表)
+	 List_Stack* ReadFile(const string& filename)
+	{
+		ifstream inFile(filename, ios::in);
+		if (!inFile)
+		{
+			cerr << "文件 " << filename << " 无法打开" << endl;
+			return nullptr; // 文件无法打开时返回nullptr
+		}
+
+		List_Stack* new_head = nullptr; // 初始化new_head为nullptr
+		List_Stack* last_node = nullptr; // 用于跟踪最后一个节点
+
+		int id;
+		while (inFile >> id) // 逐行读取文件中的数据
+		{
+			List_Stack* temp = new List_Stack; // 创建新节点
+			temp->id = id;                     // 设置节点的id
+			temp->next = nullptr;              // 设置节点的next指针
+
+			if (new_head == nullptr) // 如果链表为空
+			{
+				new_head = temp; // 新节点成为链表的头节点
+				last_node = temp; // 更新最后一个节点
+			}
+			else
+			{
+				last_node->next = temp; // 将新节点连接到链表末尾
+				last_node = temp;       // 更新最后一个节点
+			}
+		}
+
+		inFile.close(); // 关闭文件
+
+		return new_head; // 返回链表的头节点
+	}
+
+
+	//List_Stack* ReadFile(const string& filename)
+	//{
+	//	ifstream inFile(filename, ios::in);
+	//	if (!inFile)
+	//	{
+	//		cerr << "文件" << filename << "无法打开" << endl;
+	//		return nullptr;
+	//	}
+	//	List_Stack* new_head = new List_Stack;
+ //		int id;
+	//	while (inFile >> id)
+	//	{
+	//		List_Stack* temp = new List_Stack;
+	//		temp->id = id;
+	//		if (head == nullptr)
+	//		{
+	//			new_head = temp;
+	//			temp->next = nullptr;
+	//		}
+
+	//		else {
+	//			temp->next = new_head;
+	//			new_head = temp;
+	//		}
+	//	}
+	//	system("pause");
+	//	system("cls");
+	//	inFile.close();
+	//	return new_head;
+	//}
+
+
+
+	//(将数据存储到文件里)
+	void SaveFile(const string& filename, List_Stack** head)
+	{
+		ofstream outFile(filename, ios::out | ios::trunc);
+		if (!outFile)
+		{
+			cerr << "文件" << filename << "无法打开" << endl;
+			return;
+		}
+		List_Stack* temp = *head;
+		while (temp != nullptr)
+		{
+			outFile << temp->id << endl;
+			temp = temp->next;
+		}
+
+		outFile.close();
+	}
+};
+
+
+void print1()
+{
+	system("cls");
+	cout << "----------------" << endl;
+	cout << "|1.增加新的信息|" << endl;
+	cout << "|2.删除已有信息|" << endl;
+	cout << "|3.更改已有信息|" << endl;
+	cout << "|4.查看栈顶信息|" << endl;
+	cout << "|5.展示所有信息|" << endl;
+	cout << "|6.获取栈的大小|" << endl;
+	cout << "|7.    退出    |" << endl;
+	cout << "----------------" << endl;
+}
+
+//判断 int 变量是否输入正确且限制范围
+int Limit(int min, int max)
+{
+	while (1)
+	{
+		int a;
+		cin >> a;
+		if (cin.fail())
+		{
+			cin.clear();
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');//清除缓存，防止循环
+			std::cout << "输入无效，请输入一个整数！" << endl;
+			continue;
+		}
+		if (a >= min && a <= max)
+		{
+			return a;
+		}
+		else
+		{
+			std::cout << "输入的数的范围错误，请重新输入！" << endl;
+		}
+	}
+}
+
+
+
+int main()
+{
+	List_Stack test;
+	test.head = test.ReadFile("information.txt");
+
+	int choice;			//(1增  2删  3改  4看栈顶  5看所有  6获取栈大小  7退出)
+	
+	bool judge = true;
+	int len = 0;
+	while (judge)
+	{
+		print1();
+		choice = Limit(1, 7);
+		switch (choice)
+		{
+		case 1:
+			test.Add();
+			test.SaveFile("information.txt",&test.head);
+			system("pause");
+			system("cls");
+			break;
+		case 2:
+			test.Delete();		//(只能删除头节点)
+			test.SaveFile("information.txt", &test.head);
+			system("pause");
+			system("cls");
+			break;
+		case 3:
+			test.Change();
+			test.SaveFile("information.txt", &test.head);
+			system("pause");
+			system("cls");
+			break;
+		case 4:
+			test.print_head();
+			system("pause");
+			system("cls");
+			break;
+		case 5:
+			test.digui(test.head);
+			system("pause");
+			system("cls");
+			break;
+		case 6:
+			len = test.Get_len();
+			cout << "当前栈的大小是" << len << endl;
+			system("pause");
+			system("cls");
+			break;
+		case 7:
+			judge = false;
+			break;
+		}
+	}
+	
+	system("pause");
+	return 0;
+}
