@@ -1,0 +1,196 @@
+#include <iostream>
+using namespace std;
+
+class Queue {
+private:
+    int* arr;
+    int add_index; // 添加新元素的下标索引
+    int del_index; // 删除已有元素的下标索引
+    int max;       // 队列的容量
+    int count;     // 队列的大小
+
+public:
+    Queue() {
+        max = 10;
+        arr = new int[max];
+        for (int i = 0; i < max; i++) {
+            arr[i] = -1; // 初始化为 -1
+        }
+        del_index = 0;
+        add_index = 0;
+        count = 0;
+    }
+
+    ~Queue() {
+        delete[] arr;
+    }
+
+    void expand() {
+        int new_max = max * 2;
+        int* new_arr = new int[new_max];
+        int index = del_index;
+        for (int i = 0; i < count; i++) {
+            new_arr[i] = arr[index];
+            index = (index + 1) % max; // 环形复制
+        }
+        delete[] arr;
+        arr = new_arr;
+        del_index = 0;
+        add_index = count;
+        max = new_max;
+        cout << "扩容成功，队列容量变为原来的二倍" << endl;
+    }
+
+    void reduce() {
+        if (count > max / 2) {
+            cout << "当前元素超出队列最大容量的一半，无法进行缩容操作" << endl;
+            return;
+        }
+        else if (max / 2 == 0){
+            cout << "当前容量已经是最小，无法再次缩容" << endl;
+            return;
+        }
+        int new_max = max / 2;
+        int* new_arr = new int[new_max];
+        int index = del_index;
+        for (int i = 0; i < count; i++) {
+            new_arr[i] = arr[index];
+            index = (index + 1) % max; // 环形复制
+        }
+        delete[] arr;
+        arr = new_arr;
+        del_index = 0;
+        add_index = count;
+        max = new_max;
+        cout << "缩容成功，队列容量变为原来的一半" << endl;
+    }
+
+    void add() {
+        if (count == max) {
+            expand(); // 如果队列已满，先扩容
+        }
+        cout << "请输入编号: ";
+        int value;
+        cin >> value;
+        arr[add_index] = value;
+        add_index = (add_index + 1) % max;
+        count++;
+        cout << "入队成功！" << endl;
+    }
+
+    void del() {
+        if (count == 0) {
+            cout << "队列为空，无法出队！" << endl;
+            return;
+        }
+        arr[del_index] = -1; // 标记为空
+        del_index = (del_index + 1) % max;
+        count--;
+        cout << "出队成功！" << endl;
+    }
+
+    int Get_len() {
+        return count;
+    }
+
+    int Get_max() {
+        return max;
+    }
+
+    void print() {
+        if (count == 0) {
+            cout << "当前队列为空" << endl;
+            return;
+        }
+        cout << "当前队列中的元素为：" << endl;
+        int index = del_index;
+        for (int i = 0; i < count; i++) {
+            cout << arr[index] << " ";
+            index = (index + 1) % max;
+        }
+        cout << endl;
+    }
+};
+
+void printMenu() {
+    cout << "----------------" << endl;
+    cout << "|1.   入 队    |" << endl;
+    cout << "|2.   出 队    |" << endl;
+    cout << "|3.   扩 容    |" << endl;
+    cout << "|4.   缩 容    |" << endl;
+    cout << "|5.获取队列大小|" << endl;
+    cout << "|6.获取队列容量|" << endl;
+    cout << "|7.展示队列信息|" << endl;
+    cout << "|8.   退 出    |" << endl;
+    cout << "----------------" << endl;
+}
+
+int Limit(int min, int max) {
+    while (1) {
+        int a;
+        cin >> a;
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // 清除缓存，防止循环
+            cout << "输入无效，请输入一个整数！" << endl;
+            continue;
+        }
+        if (a >= min && a <= max) {
+            return a;
+        }
+        else {
+            cout << "输入的数的范围错误，请重新输入！" << endl;
+        }
+    }
+}
+
+int main() {
+    Queue test;
+
+    while (1) {
+        printMenu();
+        int choice = Limit(1, 8);
+        if (choice == 1) { // 入队
+            test.add();
+            system("pause");
+            system("cls");
+        }
+        if (choice == 2) { // 出队
+            test.del();
+            system("pause");
+            system("cls");
+        }
+        if (choice == 3) { // 扩容
+            test.expand();
+            system("pause");
+            system("cls");
+        }
+        if (choice == 4) { // 缩容
+            test.reduce();
+            system("pause");
+            system("cls");
+        }
+        if (choice == 5) { // 获取大小
+            int temp = test.Get_len();
+            cout << "当前队列的大小是: " << temp << endl;
+            system("pause");
+            system("cls");
+        }
+        if (choice == 6) { // 获取容量
+            int temp = test.Get_max();
+            cout << "当前队列的容量是: " << temp << endl;
+            system("pause");
+            system("cls");
+        }
+        if (choice == 7) { // 展示队列信息
+            test.print();
+            system("pause");
+            system("cls");
+        }
+        if (choice == 8) { // 退出
+            break;
+        }
+        cin.get(); // 等待用户按下回车
+    }
+    return 0;
+}
