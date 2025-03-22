@@ -1,0 +1,961 @@
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <conio.h>
+
+//基本链表 ：（属性：id name ）（方法：增 删 改 查 展示节点信息（循环） 排序  ） （）
+//账号信息链表 ：（属性： account password） 
+using namespace std;
+
+void print1()
+{
+	system("cls");
+	cout << "------------------" << endl;
+	cout << "|1.注册    2.登录|" << endl;
+	cout << "------------------" << endl;
+	cout << endl;
+}
+
+void print2()
+{
+	cout << "------------------" << endl;
+	cout << "|1.管理员  2.用户|" << endl;
+	cout << "------------------" << endl;
+}
+
+void print3()	//(管理员界面)
+{
+	system("cls");
+	cout << "----------------" << endl;
+    cout << "|1.增加新的信息|" << endl;
+	cout << "|2.删除已有信息|" << endl;
+	cout << "|3.更改已有信息|" << endl;
+	cout << "|4.查找已有信息|" << endl;
+	cout << "|5.正序展示信息|" << endl;
+	cout << "|6.倒序展示信息|" << endl;
+	cout << "|7.    退出    |" << endl;
+	cout << "----------------" << endl;
+}
+
+void print4()		//(用户界面)
+{
+	system("cls");
+	cout << "----------------" << endl;
+	cout << "|1.查找已有信息|" << endl;
+	cout << "|2.正序展示信息|" << endl;
+	cout << "|3.倒序展示信息|" << endl;
+	cout << "|4.    退出    |" << endl;
+	cout << "----------------" << endl;
+}
+
+//判断 int 变量是否输入正确且限制范围
+int Limit(int min, int max)
+{
+	while (1)
+	{
+		int a;
+		cin >> a;
+		if (cin.fail())
+		{
+			cin.clear();
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');//清除缓存，防止循环
+			std::cout << "输入无效，请输入一个整数！" << endl;
+			continue;
+		}
+		if (a >= min && a <= max)
+		{
+			return a;
+		}
+		else
+		{
+			std::cout << "输入的数的范围错误，请重新输入！" << endl;
+		}
+	}
+}
+
+
+//隐藏密码
+string Pass()
+{
+	string password;
+	char ch;
+
+	while ((ch = _getch()) != '\r')
+	{
+		if (ch == '\b' && !password.empty())
+		{
+			password.pop_back();
+			std::cout << "\b \b";
+		}
+		else if (ch != '\b')
+		{
+			password += ch;
+			std::cout << "*";
+		}
+	}
+	std::cout << endl;
+	return password;
+}
+//empty() 是一个成员函数，用于检查容器是否为空。它返回一个布尔值：如果容器中没有任何元素，则返回 true
+//pop_back() 是另一个成员函数，用于移除容器中最后一个元素。它不会返回被移除的元素的值
+
+
+class Double_List
+{
+private:
+	int id;
+	string name;
+public:
+	Double_List* head;		//（定义头节点）
+	Double_List* next;		//（指向后一个节点）
+	Double_List* prev;		//（指向前一个节点）
+
+	int Getid()
+	{
+		return this->id;
+	}
+	string Getname()
+	{
+		return this->name;
+	}
+	void Setid(int id)
+	{
+		this->id = id;
+	}
+	void Setname(string name)
+	{
+		this->name = name;
+	}
+
+
+	//（从文件里面读取信息到链表）
+	Double_List* Loading(const string& filename) {
+		ifstream infile(filename, ios::in);
+		if (!infile) {
+			cerr << "文件" << filename << "无法打开" << endl;
+			return nullptr;
+		}
+
+		Double_List* head = nullptr;
+		Double_List* tail = nullptr;
+
+		int id;
+		string name;
+		while (infile >> id >> name) {
+			Double_List* temp = new Double_List;
+			temp->id = id;
+			temp->name = name;
+
+			if (!head) {					//（当链表为空 创建一个双向循环链表）
+				head = temp;				//（头指针指向temp）
+				tail = temp;				//（尾指针也指向temp）
+				temp->next = temp;
+				temp->prev = temp;
+			}
+			else {						//（当链表不为空 直接添加新的节点数据到链表 ）
+										//（尾插法 插入到tail节点的后面）
+				temp->prev = tail;		//（每当插入一个新的节点 就要有4个指针的指向发生变化）		
+				temp->next = head;
+				tail->next = temp;
+				head->prev = temp;
+				tail = temp;			//（在将tail指针指向链表的末尾 方便后续节点的插入）
+			}
+		}
+
+		infile.close();
+		return head;
+	}
+
+
+	//（保存链表信息到文件）
+	void Save_information(Double_List** head, const string& filename) {
+		ofstream outfile(filename, ios::out | ios::trunc);
+		if (!outfile) {
+			cerr << "文件" << filename << "打开失败" << endl;
+			return;
+		}
+
+		Double_List* temp = *head;
+		
+		if (temp != nullptr)
+		{
+			do {
+				outfile << temp->id << " " << temp->name << endl;
+				if (temp->next == nullptr) break; // 防止非法指针
+				temp = temp->next;
+			} while (temp != *head);
+		}
+		outfile.close();
+	}
+
+	
+
+	void Print()
+	{
+		cout << "这个学生的信息如下所示" << endl;
+		cout << "ID:" << this->id << endl;
+		cout << "姓名:" << this->name << endl;
+	}
+
+public:
+	//(实现增删改查功能的函数)
+
+	//(自定义选择位置进行信息的插入)
+	void insert()
+	{
+		int id;
+		string name;
+		Double_List* newNode = new Double_List;
+		cout << "请输入账号(2415001--2415999):";
+		id = Limit(2415001, 2415999);
+		cout << "请输入姓名:";
+		cin >> name;
+		newNode->Setid(id);
+		newNode->Setname(name);
+		Double_List* temp = head;
+
+		if (!head) {		//（当链表为空的时候 创建一个双向循环链表）
+			head = newNode;
+			newNode->prev = newNode;
+			newNode->next = newNode;
+			cout << "添加成功" << endl;
+			system("pause");
+			system("cls");
+			return;
+		}
+
+		while (temp != nullptr)
+		{
+			if (temp->id < id)
+			{
+				newNode->next = temp->next;
+				temp->next->prev = newNode;
+				newNode->prev = temp;
+				temp->next = newNode;
+				break;
+			}
+		}
+		if (temp == nullptr)
+		{
+			Double_List* tail = head->prev;
+			tail->next = newNode;
+			newNode->prev = tail;
+			newNode->next = head;
+			head->prev = newNode;
+		}
+		cout << "添加成功" << endl;
+		system("pause");
+		system("cls");
+	}
+
+
+
+	// 插入节点到链表末尾
+	void Add(Double_List** head)
+	{
+		int id;
+		string name;
+		Double_List* newNode = new Double_List;
+		cout << "请输入账号(2415001--2415999):";
+		id = Limit(2415001, 2415999);
+		cout << "请输入姓名:";
+		cin >> name;
+		newNode->Setid(id);
+		newNode->Setname(name);
+
+		if (!*head) {		//（当链表为空的时候 创建一个双向循环链表）
+			*head = newNode;
+			newNode->prev = newNode;
+			newNode->next = newNode;
+		}
+		else {				//（当链表不为空 直接添加新的节点到链表的开头）
+			Double_List* tail = (*head)->prev;
+			tail->next = newNode;
+			newNode->prev = tail;
+			newNode->next = *head;
+			(*head)->prev = newNode;
+		}
+
+		cout << "添加成功" << endl;
+		system("pause");
+		system("cls");
+	}
+
+
+
+	//删除信息	要特殊处理链表里面只剩一个节点的情况  否则可能会引发报错
+	void Delete(Double_List** head) {
+		if (!*head) {
+			cout << "链表为空，无数据可删除" << endl;
+			return;
+		}
+
+		cout << "下面是全部的已有数据" << endl;
+		Print_All(head);
+
+		int id;
+		cout << "请输入你要删除的账号(2415001--2415999): ";
+		id = Limit(2415001, 2415999);
+
+		Double_List* current = *head;
+		do {
+			if (current->id == id) {
+				Double_List* prevNode = current->prev;
+				Double_List* nextNode = current->next;
+
+				if (current == current->next) {  // 链表中只有一个节点
+					*head = nullptr;
+				}
+				else {
+					prevNode->next = nextNode;
+					nextNode->prev = prevNode;
+
+					if (current == *head) {  // 删除的是头节点
+						*head = nextNode;
+					}
+				}
+
+				delete current;
+				cout << "删除成功" << endl;
+				system("pause");
+				system("cls");
+				return;
+			}
+			current = current->next;
+		} while (current != *head);
+
+		cout << "未找到指定ID" << endl;
+	}
+
+	
+
+
+	//更改信息
+	void updateAt(Double_List** head) {
+		if (!*head) return;
+
+		cout << "下面是全部的已有数据" << endl;
+		Print_All(head);
+
+		int id;
+		cout << "请输入要更改信息的学生ID" << endl;
+		id = Limit(2415001, 2415999);
+
+		Double_List* current = *head;
+		do {
+			if (current->id == id) {
+				int new_id;
+				string new_name;
+				cout << "请输入新的ID" << endl;
+				new_id = Limit(2415001, 2415999);
+				cout << "请输入新的姓名" << endl;
+				cin >> new_name;
+
+				current->id = new_id;
+				current->name = new_name;
+				cout << "更改成功" << endl;
+				system("pause");
+				system("cls");
+				return;
+			}
+			current = current->next;
+		} while (current != *head);
+
+		cout << "未找到指定ID" << endl;
+	}
+
+
+
+	//(查找信息)
+	void find(Double_List** head) {
+		if (!*head) {
+			cout << "链表为空" << endl;
+			return;
+		}
+		cout << "下面是全部的已有数据" << endl;
+		Print_All(head);
+		int id;
+		cout << "请输入要查找的ID" << endl;
+		id = Limit(2415001, 2415999);
+
+		Double_List* current = *head;
+		do {
+			if (current->id == id) {
+				current->Print();
+				return;
+			}
+			current = current->next;
+		} while (current != *head);
+
+		cout << "未找到指定ID" << endl;
+	}
+
+
+	// 自主选择遍历次数 遍历链表并打印
+	void display(Double_List** head, int num)
+	{
+		if (!*head) {
+			cout << "链表为空" << endl;
+			return;
+		}
+
+		Double_List* current = *head;
+		int count = 0;
+		do {
+			cout << "ID: " << current->id << "  Name: " << current->name << endl;
+			current = current->next;
+			if (current == *head) {
+				count++;
+				cout << "第" << count << "遍历完成" << endl;
+			}
+			
+		} while (current != *head || count < num);
+	}
+	
+
+
+	//(简单的打印函数)
+	void Print_All(Double_List** head)
+	{
+		if (!*head) {
+			cout << "链表为空" << endl;
+			return;
+		}
+
+		Double_List* current = *head;
+		do {
+			cout << "ID: " << current->id << "  Name: " << current->name << endl;
+			current = current->next;
+		} while (current != *head );
+	}
+
+
+	//(倒序的打印函数)
+	void Print_Vll(Double_List** head,int times)
+	{
+		if (!*head) {
+			cout << "链表为空" << endl;
+			return;
+		}
+		int sum = 0;
+		Double_List* current = *head;
+		do {
+			cout << "ID: " << current->id << "  Name: " << current->name << endl;
+			current = current->prev;
+			if (current == *head)
+			{
+				sum++;
+				cout << "第" << sum << "次遍历完成" << endl;
+			}
+		} while (current != *head || sum < times);
+	}
+
+public:
+	Double_List()
+	{
+
+	}
+	~Double_List()
+	{
+		if (!head) return;
+
+		Double_List* current = head;
+		do {
+			Double_List* temp = current;
+			current = current->next;
+			delete temp;
+		} while (current != head);
+	}
+};
+
+
+class User
+{
+private:
+	string id;
+	string password;
+public:
+	User* head;
+	User* next;
+	string Getid()
+	{
+		return this->id;
+	}
+	string Getpassword()
+	{
+		return this->password;
+	}
+	void Setid(string id)
+	{
+		this->id = id;
+	}
+	void Setpassword(string password)
+	{
+		this->password = password;
+	}
+public:
+
+	//(添加用户账号)
+	void Add_User(User** head) {
+		string new_account;
+		string new_password;
+		string new_password2;
+		cout << "请输入账号:" << endl;
+		cin >> new_account;
+
+		User* current = *head;
+		while (current) {
+			if (current->id == new_account) {
+				cout << "该账号已存在，请重新输入！" << endl;
+				return;  // 如果账号已存在，直接返回
+			}
+			current = current->next;
+		}
+
+		while (1) {
+			cout << "请输入密码:" << endl;
+			new_password = Pass();
+			cout << "请确认密码:" << endl;
+			new_password2 = Pass();
+			if (new_password == new_password2) {
+				break;
+			}
+			else {
+				cout << "两次输入的密码不同" << endl;
+			}
+		}
+
+		User* newnode = new User;
+		newnode->id = new_account;
+		newnode->password = new_password;
+		newnode->next = nullptr;
+
+		// 插入到链表尾部
+		if (!*head) {
+			*head = newnode;  // 如果链表为空，新节点成为头节点
+		}
+		else {
+			current = *head;
+			while (current->next) {
+				current = current->next;  // 找到尾节点
+			}
+			current->next = newnode;  // 将新节点插入到尾部
+		}
+
+		cout << "账号添加成功！" << endl;
+	}
+
+
+
+	//(从文件里读取用户账号信息的函数)
+
+	User* Loading(const string& filename) {
+		ifstream infile(filename, ios::in);
+		if (!infile) {
+			cerr << "文件" << filename << "无法打开" << endl;
+			return nullptr;
+		}
+
+		User* head = nullptr;
+		User* tail = nullptr;
+
+		string id, password;
+		while (infile >> id >> password) {
+			User* newNode = new User;
+			newNode->id = id;
+			newNode->password = password;
+			newNode->next = nullptr;
+
+			if (!head) {
+				head = newNode;  // 第一个节点，初始化头指针
+				tail = newNode;  // 尾指针也指向第一个节点
+			}
+			else {
+				tail->next = newNode;  // 将新节点插入到尾部
+				tail = newNode;  // 更新尾指针
+			}
+		}
+
+		infile.close();
+		return head;
+	}
+
+
+
+	//(保存用户信息到文件)
+
+	void Save_User(User** head, const string& filename) {
+		ofstream outfile(filename, ios::out | ios::trunc);
+		if (!outfile) {
+			cerr << "文件" << filename << "打开失败" << endl;
+			return;
+		}
+
+		User* temp = *head;
+		while (temp) {  // 单链表的遍历逻辑
+			outfile << temp->id << " " << temp->password << endl;
+			temp = temp->next;
+		}
+
+		outfile.close();
+	}
+
+	
+
+	User(){}
+	~User()
+	{
+		User* temp = head;
+		while (temp != nullptr)
+		{
+			User* _temp = temp->next;
+			delete temp;
+			temp = _temp;
+		}
+	}
+};
+
+class Manager
+{
+private:
+	string id;
+	string password;
+public:
+	Manager* head;
+	Manager* next;
+	string Getid()
+	{
+		return this->id;
+	}
+	string Getpassword()
+	{
+		return this->password;
+	}
+	void Setid(string id)
+	{
+		this->id = id;
+	}
+	void Setpassword(string password)
+	{
+		this->password = password;
+	}
+public:
+	//(添加管理员账号)
+
+	void Add_Manager(Manager** head) {
+		string new_account;
+		string new_password;
+		string new_password2;
+		cout << "请输入账号:" << endl;
+		cin >> new_account;
+
+		Manager* current = *head;
+		while (current) {
+			if (current->id == new_account) {
+				cout << "该账号已存在，请重新输入！" << endl;
+				return;  // 如果账号已存在，直接返回
+			}
+			current = current->next;
+		}
+
+		while (1) {
+			cout << "请输入密码:" << endl;
+			new_password = Pass();
+			cout << "请确认密码:" << endl;
+			new_password2 = Pass();
+			if (new_password == new_password2) {
+				break;
+			}
+			else {
+				cout << "两次输入的密码不同" << endl;
+			}
+		}
+
+		Manager* newnode = new Manager;
+		newnode->id = new_account;
+		newnode->password = new_password;
+		newnode->next = nullptr;
+
+		// 插入到链表尾部
+		if (!*head) {
+			*head = newnode;  // 如果链表为空，新节点成为头节点
+		}
+		else {
+			current = *head;
+			while (current->next) {
+				current = current->next;  // 找到尾节点
+			}
+			current->next = newnode;  // 将新节点插入到尾部
+		}
+
+		cout << "账号添加成功！" << endl;
+	}
+
+
+
+	//(从文件里读取管理员账号信息的函数)
+	Manager* Loading(const string& filename) {
+		ifstream infile(filename, ios::in);
+		if (!infile) {
+			cerr << "文件" << filename << "无法打开" << endl;
+			return nullptr;
+		}
+
+		Manager* head = nullptr;
+		Manager* tail = nullptr;
+
+		string id, password;
+		while (infile >> id >> password) {
+			Manager* newNode = new Manager;
+			newNode->id = id;
+			newNode->password = password;
+			newNode->next = nullptr;
+
+			if (!head) {
+				head = newNode;  // 第一个节点，初始化头指针
+				tail = newNode;  // 尾指针也指向第一个节点
+			}
+			else {
+				tail->next = newNode;  // 将新节点插入到尾部
+				tail = newNode;  // 更新尾指针
+			}
+		}
+
+		infile.close();
+		return head;
+	}
+
+
+
+
+	//(保存管理员账号信息)
+
+	void Save_Manager(Manager** head, const string& filename) {
+		ofstream outfile(filename, ios::out | ios::trunc);
+		if (!outfile) {
+			cerr << "文件" << filename << "打开失败" << endl;
+			return;
+		}
+
+		Manager* temp = *head;
+		while (temp) {  // 单链表的遍历逻辑
+			outfile << temp->id << " " << temp->password << endl;
+			temp = temp->next;
+		}
+
+		outfile.close();
+	}
+
+	
+
+	Manager()
+	{
+
+	}
+	~Manager()
+	{
+		Manager* temp = head;
+		while (temp!=nullptr)
+		{
+			Manager *_temp = temp->next;
+			delete temp;
+			temp = _temp;
+		}
+	}
+};
+
+int main()
+{
+	Double_List Base;
+	Manager manager;
+	User user;
+	Base.head = Base.Loading("information.txt");
+	manager.head = manager.Loading("Manager.txt");
+	user.head = user.Loading("User.txt");
+
+	
+	print2();
+	int num = Limit(1, 2);		//（num==1是管理员   num==2是用户）
+	int numble=1;
+	while (numble == 1)
+	{
+		print1();		//(1是注册  2是登录)
+		numble = Limit(1, 2);
+		if (numble == 1)	//开始账号的注册
+		{
+			if (num == 1)		//注册管理员账号
+			{
+				manager.Add_Manager(&manager.head);
+				manager.Save_Manager(&manager.head,"Manager.txt");
+				cout << "注册成功" << endl;
+			}
+			if (num == 2)		//注册用户账号
+			{
+				user.Add_User(&user.head);
+				user.Save_User(&user.head, "User.txt");
+				cout << "注册成功" << endl;
+			}
+		}
+		else if (numble == 2)
+		{
+			system("pasue");
+			system("cls");
+			break;
+		}
+	}
+	
+
+	int wether_succes = 0;		//(用于判断是否登录成功 以及登录的选项)
+								
+	string _id = "null";
+	string _turepass = "null";
+	
+	while (numble==2)
+	{
+		cout << "请输入账号：";
+		cin >> _id;
+		cout << "请输入密码：";
+		_turepass = Pass();
+
+		if (num == 1)		//(对管理员账号进行判断)
+		{
+			Manager* temp_M = manager.head;
+			while (temp_M != nullptr)
+			{
+				if ((_id == temp_M->Getid()) && (_turepass == temp_M->Getpassword()))
+				{
+					cout << "登陆成功" << endl;
+					system("pause");
+					system("cls");
+					numble = 0;
+					wether_succes = 1;
+					break;
+				}
+				temp_M = temp_M->next;
+			}
+			if (temp_M == nullptr)
+			{
+				cout << "登陆失败 请重新输入账号密码" <<endl;
+				continue;
+			}
+		}
+		else if (num == 2)
+		{
+			User* temp_U = user.head;
+			while (temp_U != nullptr)
+			{
+				if ((_id == temp_U->Getid()) && (_turepass == temp_U->Getpassword()))
+				{
+					cout << "登陆成功" << endl;
+					system("pause");
+					system("cls");
+					numble = 0;
+					wether_succes = 2;
+					break;
+				}
+				temp_U = temp_U->next;
+			}
+			if (temp_U == nullptr)
+			{
+				cout << "登陆失败 请重新输入账号密码" << endl;
+				continue;
+			}
+		}
+	}
+
+	//(当登录成功之后wether_succes==1是管理员       当wether_succes==2是用户)
+	while (wether_succes==1)
+	{
+		print3();		//(1.增 2删 3改 4查 5展示（正序） 6展示（倒序） 7退出)(对数据信息的操作)
+		int m;
+		m = Limit(1, 7);
+		switch (m)
+		{
+		case 1:
+			Base.insert();
+			Base.Save_information(&Base.head,"information.txt");
+			system("pause");
+			system("cls");
+			break;
+		case 2:
+			Base.Delete(&Base.head);
+			if (Base.head != nullptr) {
+				Base.Save_information(&Base.head, "information.txt");
+			}
+			system("pause");
+			system("cls");
+			break;
+		case 3:
+			Base.updateAt(&Base.head);
+			Base.Save_information(&Base.head, "information.txt");
+			system("pause");
+			system("cls");
+			break;
+		case 4:
+			Base.find(&Base.head);
+			system("pause");
+			system("cls");
+			break;
+		case 5:
+			int times;
+			cout << "请输入你要遍历的次数" << endl;
+			times = Limit(1, 99999);
+			Base.display(&Base.head, times);
+			system("pause");
+			system("cls");
+			break;
+		case 6:
+			int time;
+			cout << "请输入你要遍历的次数" << endl;
+			time = Limit(1, 99999);
+			Base.Print_Vll(&Base.head,time);
+			system("pause");
+			system("cls");
+			break;
+		case 7:
+			system("pause");
+			system("cls");
+			wether_succes = 0;
+			break;
+		}
+	}
+
+	while (wether_succes == 2)
+	{
+		print4();		//(1查  2展示（正序）  3展示（倒序）   4退出)
+		int u;
+		u = Limit(1, 4);
+		switch (u)
+		{
+		case 1:
+			Base.find(&Base.head);
+			system("pause");
+			system("cls");
+			break;
+		case 2:
+			int times;
+			cout << "请输入你要遍历的次数" << endl;
+			times = Limit(1, 99999);
+			Base.display(&Base.head, times);
+			system("pause");
+			system("cls");
+			break;
+		case 3:
+			int _times;
+			cout << "请输入你要遍历的次数" << endl;
+			_times = Limit(1, 99999);
+			Base.Print_Vll(&Base.head, _times);
+			system("pause");
+			system("cls");
+			break;
+		case 4:
+			system("pause");
+			system("cls");
+			wether_succes = 0;
+			break;
+		}
+	}
+	cout << "欢迎下次使用" << endl;
+	system("pause");
+	return 0;
+}
